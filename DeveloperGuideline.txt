@@ -1,0 +1,35 @@
+Part 1-one person-Base of Server:
+1. Creating forking process- exclusive to each client
+2. Server returns listening to other clients after forking
+3. Child calls a function named crequest(), crequest() goes into infinity loop, waiting for client commands.
+4. Child Process Receives Command from Client(Derived Task)(2 Person )*
+5. Child process terminates on quitc
+
+*4.1 dirlist -a (Server)
+4.2 quitc(Server Command)
+4.3 dirlist -t
+4.4 w24fn
+4.5 w24fz
+4.6 w24ft 
+4.7 w24fdb date
+4.8 w24fda date
+
+
+0=false
+1=True
+
+local Variable Name:
+nameOfVariable
+
+Function Name & Struct:
+FunctionName
+
+Global Variable:
+_globalVariable
+_global
+
+
+message:
+(\n Normal Execution: message \n)
+(\n Error: message \n)
+(\n User Mistake: message\n)
