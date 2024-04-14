@@ -12,32 +12,93 @@
 #define MIRR2_IP "127.0.0.1"
 #define MIRR1_PORT 9010
 #define MIRR2_PORT 9011
+#define DEF_BUFF_SIZE 1024
+
+void executeCommands(int client_sock, char* usercmd) {
+    FILE *fp;
+    char cmd[DEF_BUFF_SIZE];
+    char response[DEF_BUFF_SIZE] = {0};
+    if (strcmp(usercmd, "dirlist -a") == 0 || strcmp(usercmd, "dirlist -t") == 0) {
+
+        // building the command
+        if (strstr(usercmd, "-a")!=NULL) {  // for option -a
+            printf("In option -a\n");
+            snprintf(cmd, sizeof(cmd), "cd %s && ls -d */", getenv("HOME"));
+        }
+        else {  // for option -t
+            printf("In option -t\n");
+            snprintf(cmd, sizeof(cmd), "ls -ltrd %s/*/ | awk '{print $9}'", getenv("HOME"));
+        }
+
+        // Open the command for reading
+        fp = popen(cmd, "r");
+        if (fp == NULL) {
+            perror("Failed to run command");
+            exit(EXIT_FAILURE);
+        }
+
+        int response_size = 0;
+        char *filepath;
+       
+        // calculating response size.
+        char curLine[128];
+        while (fgets(curLine, sizeof(curLine), fp) != NULL) {
+            printf("curLine: %s", curLine);
+            response_size += strlen(curLine);
+            strcat(response, curLine);
+        }
+        
+        int bytesofInt = htonl(response_size);  // converting int to network byte
+
+        printf("res size is: %d\n", response_size );
+        send(client_sock, &bytesofInt, sizeof(bytesofInt), 0);  // sending the size of response first
+
+        send(client_sock, response, strlen(response), 0);   // sending the actual response
+
+        // Close the pipe
+        pclose(fp);
+    }
+   
+    // }
+    // else if (strstr(usercmd, "w24fn") != NULL) {
+    //     char *tkn;
+
+    //     // storing first argumetn in 
+    //     tkn = strtok(usercmd, " ");
+    //     tkn = strtok(usercmd, " ");
+
+    //     snprintf(cmd, sizeof(cmd), "find %s -name %s -print | head -n 1", getenv("HOME"), tkn);
+   
+    // }
+    else {
+        printf("No such command found\n");
+        pclose(fp);
+    }
+}
 
 void crequest(int client_sock) {
-    char buffer[1024];
+    char clicmd[DEF_BUFF_SIZE];
     int client_readChar;
 
     // waiting for command from client in infinite loop
     while(1) {
-        memset(buffer, 0, sizeof(buffer)); // resetting the buffer content.
-        
+        memset(clicmd, 0, sizeof(clicmd)); // resetting the buffer content.
+        printf("cmd: %s\n", clicmd);
         // Reading command sent from client
-        client_readChar = read(client_sock, buffer, sizeof(buffer));
+        //client_readChar = read(client_sock, clicmd, sizeof(clicmd));
+        client_readChar = recv(client_sock, clicmd, DEF_BUFF_SIZE, 0);
         if(client_readChar <= 0) {
-            perror("read_crequest");
+            perror("recv");
             break; 
         }
         
-        printf("Command received and processing....: %s\n", buffer);
+        printf("Command received and processing...: %s\n", clicmd);
 
-        char response[1024];
-        snprintf(response, sizeof(response), "Server received: %s", buffer);
-        sleep(60);
+        if (strcmp(clicmd, "quitc")==0) return;
 
-        // Returning result back to client
-        if(write(client_sock, response, strlen(response)) > 0) {
-            printf("Response sent successfully\n");
-        }
+        // Implementation of commands here.
+        executeCommands(client_sock, clicmd);
+        printf("\nresponse sent to client\n");
     }
 
     close(client_sock); // Close the client socket
@@ -127,6 +188,7 @@ int main() {
         if(child_pid == 0) {
             close(conn_sckt); // Close the listening socket in the child process
             crequest(listening_socket); // Handle the client's request
+            close(listening_socket); // close listening socket
             exit(0);
         } 
         else {
