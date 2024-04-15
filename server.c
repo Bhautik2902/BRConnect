@@ -37,20 +37,16 @@ void executeCommands(int client_sock, char* usercmd) {
             exit(EXIT_FAILURE);
         }
 
-        int response_size = 0;
-        char *filepath;
-       
+        int response_size = 0;       
         // calculating response size.
         char curLine[128];
         while (fgets(curLine, sizeof(curLine), fp) != NULL) {
-            printf("curLine: %s", curLine);
             response_size += strlen(curLine);
             strcat(response, curLine);
         }
         
         int bytesofInt = htonl(response_size);  // converting int to network byte
 
-        printf("res size is: %d\n", response_size );
         send(client_sock, &bytesofInt, sizeof(bytesofInt), 0);  // sending the size of response first
 
         send(client_sock, response, strlen(response), 0);   // sending the actual response
@@ -58,18 +54,49 @@ void executeCommands(int client_sock, char* usercmd) {
         // Close the pipe
         pclose(fp);
     }
-   
-    // }
-    // else if (strstr(usercmd, "w24fn") != NULL) {
-    //     char *tkn;
+    else if (strstr(usercmd, "w24fn") != NULL) {
+        char filename[64] = {0};
 
-    //     // storing first argumetn in 
-    //     tkn = strtok(usercmd, " ");
-    //     tkn = strtok(usercmd, " ");
+        sscanf(usercmd, "%*s %s", filename);        
 
-    //     snprintf(cmd, sizeof(cmd), "find %s -name %s -print | head -n 1", getenv("HOME"), tkn);
-   
-    // }
+        // building command to check if file exists 
+        snprintf(cmd, sizeof(cmd), "find %s -name %s -print | head -n 1 | xargs ls -l {} + 2>/dev/null", getenv("HOME"), filename);
+
+        fp = popen(cmd, "r");
+        if (fp == NULL) {
+            perror("Failed to run command");
+            exit(EXIT_FAILURE);
+        }
+
+        char filedetails[128];
+        
+        if (fgets(filedetails, sizeof(filedetails), fp) != NULL) {
+            // declaring variables to store details.
+            char f_name[32], month[4], date[4], permis[16];
+            int f_size;
+
+            // scanning file details
+            sscanf(filedetails, "%s %*s %*s %*s %d %s %s %*s %s", permis, &f_size, month, date, f_name);
+
+            // formatting response
+            snprintf(response, sizeof(filedetails), "Filename: '%s'\nFilesize: %d\nMonth: %s\nDate: %s\nPermissions: %s", f_name, f_size, month, date, permis);            
+
+            int response_size = strlen(response);
+            int bytesofInt = htonl(response_size);  // converting int to network byte
+
+            send(client_sock, &bytesofInt, sizeof(bytesofInt), 0);             // sending response size first.
+
+            send(client_sock, response, strlen(response), 0);  // sending actual response
+        } 
+        else {
+            int bytesofInt = htonl(strlen("File not found"));  // converting int to network byte
+            send(client_sock, &bytesofInt, sizeof(bytesofInt), 0);            
+            send(client_sock, "File Not Found", strlen("File not found"), 0);
+        }
+
+        pclose(fp);
+        return;
+    }
     else {
         printf("No such command found\n");
         pclose(fp);
@@ -83,9 +110,8 @@ void crequest(int client_sock) {
     // waiting for command from client in infinite loop
     while(1) {
         memset(clicmd, 0, sizeof(clicmd)); // resetting the buffer content.
-        printf("cmd: %s\n", clicmd);
+
         // Reading command sent from client
-        //client_readChar = read(client_sock, clicmd, sizeof(clicmd));
         client_readChar = recv(client_sock, clicmd, DEF_BUFF_SIZE, 0);
         if(client_readChar <= 0) {
             perror("recv");

@@ -167,33 +167,37 @@ void letClientChat(int sckt) {
     if (message == NULL) printf("Memory allocation failed\n");
 
     do {
-        printf("\nEnter command: ");
+        printf("\n\nEnter command: ");
         // Read user command from standard cmd
         if (scanf(" %[^\n]", message) == 0) {
             perror("scanf");
             exit(EXIT_FAILURE);
         }
 
-        int isValid = CommandParser(message);
+        char *temp = strdup(message); // making temp copy of usercmd to perform validation
+        int isValid = CommandParser(temp);
+
         if(isValid == 1) {
-            // send message.
-            send(sckt, message, strlen(message), 0);
+          // send command.
+          send(sckt, message, strlen(message), 0);
 
-            // getting response size.
-            int int_received;
-            read(sckt, &int_received, sizeof(int_received));
+          // getting response size.
+          int int_received;
+          read(sckt, &int_received, sizeof(int_received));
 
-            // Convert from network byte order to host byte order
-            int response_size = ntohl(int_received);
+          // Convert from network byte order to host byte order
+          int response_size = ntohl(int_received);
 
-            //creating buffer of required size
-            serResponse = malloc((response_size * sizeof(char)));
+          //creating buffer of required size
+          serResponse = malloc((response_size * sizeof(char)));
 
-            printf("\nResponse from server:\n");
-            if (recv(sckt, serResponse, response_size, 0) > 0) {
-                printf("%s", serResponse);
-            }
-            free(serResponse);
+          printf("\nResponse from server:\n\n");
+          if (recv(sckt, serResponse, response_size, 0) > 0) {
+              printf("%s", serResponse);
+          }
+            // free(serResponse);
+          memset(serResponse, 0, sizeof(serResponse)); // resetting the buffer content.
+
         }
         else {
             printf("Given command is not valid\n");
