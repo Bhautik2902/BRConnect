@@ -1,7 +1,7 @@
 # Project: BRConnect
 
 ## Description
-This project is a client-server application where clients can request files or a set of files from a server. The server, running on a separate machine, handles multiple client requests by searching its file system, rooted at its home directory, and returns the requested files or directories. The project includes implementing custom commands for file and directory management between the client and server using socket programming in C.
+This project is a client-server application where clients can request files or a set of files from a server. The server, running on a separate machine, handles multiple client requests by searching its file system, rooted in its home directory, and returns the requested files or directories. The project includes implementing custom commands for file and directory management between the client and server using socket programming in C.
 
 ### Features
 - **Client-Server Communication**: Utilizes socket programming to enable communication between multiple clients and a server.
@@ -22,14 +22,7 @@ The project is divided into several components:
 2. `clientw24.c`: The client program allowing users to send commands to the server.
 3. `mirror1.c` and `mirror2.c`: Additional server instances for load distribution and redundancy.
 
-### How to Run
-Detailed instructions on how to compile and run the server and client programs will be provided in the README files within each component's directory.
-
-### Contributing
-This project is developed as part of the COMP-8567 course requirements. Contributions are welcome but must adhere to the project guidelines and coding standards.
-
-### License
-This project is licensed under the MIT License - see the LICENSE file for details.
+project is developed as part of the COMP-8567 course requirements. Contributions are welcome but must adhere to the project guidelines and coding standards.
 
 ---
 
